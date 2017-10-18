@@ -1,0 +1,82 @@
+################################################################
+#
+#
+# Pipeline pipeline_rnaseqmismatches.py configuration file for sphinxreport
+#
+# This pipeline.ini file lists some configuration options that you might 
+# want a user to set automatically.
+#
+# Add pipeline specific options into separate sections
+#
+################################################################
+## general options
+[general]
+
+# Project name
+projectname=RNASeq-Mismatches
+
+# Copyright statement
+copyright=Sudbery Lab (2016)
+
+# The short X.Y version.
+version=0.1
+
+# The full version, including alpha/beta/rc tags.
+release=0.1
+
+########################################################
+# the genome to use (UCSC convention)
+genome=hg38_noalt
+
+quality_threshold=30
+
+#platform used to generate your data. Valid values: ILLUMINA, SOLID, LS454, HELICOS and PACBIO
+platform=ILLUMINA
+
+#group sample name
+groupsample=SMA
+
+#path to the plain fasta file for the chosen genome. Must have corresponding index (.fai) and dictionary (.dict) files, which can be made with samtools and picard respectively.
+fasta=/shared/sudlab1/General/mirror/genomes/plain/
+
+#path to the fasta file used to map the data
+mapfasta=/shared/sudlab1/General/mirror/genomes/hisat/mm10.fa
+
+#path to gtf file containing the relevant genes
+gtf=/shared/sudlab1/General/annotations/hg38_noalt_ensembl85/ensembl.dir/geneset_all.gtf.gz
+
+#path to the indexed vcf file for the chosen datatset, if available
+vcf=/fastdata/mbp15jdp/GTEx/SRA-private/54157/PhenoGenotypeFiles/RootStudyConsentSet_phs000424.GTEx.v6.p1.c1.GRU/GenotypeFiles/phg000520.v2.GTEx_MidPoint_WES_SNP_CNV.genotype-calls-vcf.c1/GTEx_Analysis_20150112_ExomeSeq_520Indiv_GATK_HaplotypeCaller_SNPs_annot.vcf.gz
+
+#Whether a VCF is available. 1 for yes, 0 for no. If set to 0, SNP calling will be performed on the RNA-seq data
+vcfavail=1
+
+#pattern to extract sample name to put into VCF from VCF file name. Should only match the part you want to extract.
+vcfpattern='WTCHG-[[:digit:]]{3}'
+
+#regex pattern that will extract from the bam file name a donor name that will be used to parse the bam file.
+samplepattern=(.+-.+).bam
+
+[database]
+name=
+################################################################
+#
+# Location of annotation database
+#
+################################################################
+[annotations]
+database=/shared/sudlab1/General/annotations/hg38_noalt_ensembl85/csvdb
+
+# directory with annotation information
+dir=/shared/sudlab1/General/annotations/hg38_noalt_ensembl85
+
+################################################################
+#
+# sphinxreport build options
+#
+################################################################
+[report]
+
+# prefix to use for publishing the report from this pipeline
+prefix=default
+
