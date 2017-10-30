@@ -259,8 +259,7 @@ def variantcalling(infile,outfile):
                    -o %(tempfile)s;
                    checkpoint;
                    bgzip %(tempfile)s;
-                   checkpoint;
-                   rm -r %(tempfile)s'''  
+                   '''  
 
     job_memory = "12G"
     P.run()                 
@@ -328,7 +327,7 @@ def count_mismatches_with_VCF(infile, outfile):
     sampat = PARAMS["samplepattern"]
     samplepattern = '"%s"'%(sampat)
     quality_threshold = PARAMS["quality_threshold"]
-    statement = '''python %(projectsrc)s/count_mismatches.py
+    statement = '''python %(projectsrc)s/count_mismatches_exons.py
                                          -I %(gtfpath)s
                                          --bamfile=%(infile)s
                                          --quality-threshold=%(quality_threshold)s

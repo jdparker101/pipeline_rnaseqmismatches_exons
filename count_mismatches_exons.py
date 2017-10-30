@@ -134,6 +134,7 @@ def main(argv=None):
         mm_count = 0
         base_count = 0
         skipped = 0
+        indelcount = 0
         matched_bases = defaultdict(int)
         transition = {"a_to_t":0,"a_to_g":0,"a_to_c":0,"t_to_a":0,"t_to_g":0,
         "t_to_c":0,"g_to_a":0,"g_to_t":0,"g_to_c":0,"c_to_a":0,"c_to_t":0,
@@ -156,6 +157,10 @@ def main(argv=None):
             if read.get_tag("NH") > 1:
                 continue
             qualities = read.query_qualities
+
+            alignmentcigar = read.cigarstring
+
+            indelcount += (alignmentcigar.count("I") + alignmentcigar.count("D"))
 
             alignment = read.get_aligned_pairs(with_seq=True)
 
@@ -280,10 +285,9 @@ def main(argv=None):
                     return True
             
             def _is_indel(base):
-                if len(readseq) >= base[0] + 5 and
-                len seq >= ((base[1])-start) + 5:
+                if (len(readseq) >= (base[0] + 5)) and (len(seq) >= (((base[1])-start) + 5)):
                     readindelwindow=readseq[base[0]:(base[0] + 5)]
-                    seqindelwindow=seq[(base[1])-start:((base[1])-start)+5]
+                    seqindelwindow=seq[(((base[1])-start)-1):((((base[1])-start)+5)-1)]
                     matchwindows=[]
                     for i in range(len(readindelwindow)):
                         matchwindows.append(readindelwindow[i].lower()==seqindelwindow[i].lower())
@@ -291,15 +295,35 @@ def main(argv=None):
                         return True
                     else:
                         return False
-                elif len(readseq) < base[0] + 5 and
-                len seq < ((base[1])-start) + 5:
-                upperrange = len(readseq)-base[0]
-                lowerrange = 5 - upperrange
-                    readindelwindow=readseq[base[0] - lowerrange:base[0] + upperrange]
-                    seqindelwindow=seq[((base[1])-start) - lowerrange:((base[1])-start)+ upperrange]                
+                elif (len(readseq) < (base[0] + 5)) and (len(seq) < (((base[1])-start) + 5)):
+                    upperrange = len(readseq)-base[0]
+                    lowerrange = 5 - upperrange
+                    readindelwindow=readseq[(base[0] - lowerrange):(base[0] + upperrange)]
+                    seqindelwindow=seq[((((base[1])-start) - lowerrange)-1):((((base[1])-start)+ upperrange)-1)]                
                     matchwindows=[]
                     for i in range(len(readindelwindow)):
-                        matchwindows.append(readindelwindow[i].lower()==seqindelwindow[i].lower())
+                        try:
+                            matchwindows.append((readindelwindow[i].lower()==seqindelwindow[i].lower()))
+                        except IndexError:
+                            print i
+                            print readindelwindow
+                            print seqindelwindow
+                            print start
+                            print lowerrange
+                            print upperrange
+                            print base[0]
+                            print (base[0] - lowerrange)
+                            print (base[0] + upperrange)
+                            print base[1]
+                            print (base[1] - start)
+                            print (((base[1])-start) - lowerrange)
+                            print (((base[1])-start)+ upperrange)
+                            print readseq
+                            print seq
+                            print gene_id
+                            print gene[0].contig
+                            
+                            raise
                     if all(matchwindows) == False:
                         return True
                     else:
@@ -363,7 +387,8 @@ def main(argv=None):
                                      transition['g_to_c'],
                                      transition['c_to_a'],
                                      transition['c_to_t'],
-                                     transition['c_to_g']]))
+                                     transition['c_to_g'],
+                                     indelcount]))
         options.stdout.write(outline + "\n")
 
     # write footer and output benchmark information.

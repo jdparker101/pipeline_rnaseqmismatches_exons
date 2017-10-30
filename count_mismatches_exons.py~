@@ -134,6 +134,7 @@ def main(argv=None):
         mm_count = 0
         base_count = 0
         skipped = 0
+        indelcount = 0
         matched_bases = defaultdict(int)
         transition = {"a_to_t":0,"a_to_g":0,"a_to_c":0,"t_to_a":0,"t_to_g":0,
         "t_to_c":0,"g_to_a":0,"g_to_t":0,"g_to_c":0,"c_to_a":0,"c_to_t":0,
@@ -156,6 +157,10 @@ def main(argv=None):
             if read.get_tag("NH") > 1:
                 continue
             qualities = read.query_qualities
+
+            alignmentcigar = read.cigarstring
+
+            indelcount += (alignmentcigar.count("I") + (alignmentcigar.count("D"))
 
             alignment = read.get_aligned_pairs(with_seq=True)
 
@@ -311,7 +316,8 @@ def main(argv=None):
 		          qualities[base[0]] >= options.threshold and
                           base[2].lower() != "n" and 
                           _is_snp(base) and
-                          readseq[base[0]].lower() != "n"]
+                          readseq[base[0]].lower() != "n"
+                          and _is_indel(base)]
 
             
             total_mm = sum(1 for base in alignment
