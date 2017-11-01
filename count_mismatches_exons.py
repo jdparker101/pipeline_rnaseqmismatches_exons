@@ -285,21 +285,82 @@ def main(argv=None):
                     return True
             
             def _is_indel(base):
-                if (len(readseq) >= (base[0] + 5)) and (len(seq) >= (((base[1])-start) + 5)):
-                    readindelwindow=readseq[base[0]:(base[0] + 5)]
-                    seqindelwindow=seq[(((base[1])-start)-1):((((base[1])-start)+5)-1)]
-                    matchwindows=[]
-                    for i in range(len(readindelwindow)):
-                        matchwindows.append(readindelwindow[i].lower()==seqindelwindow[i].lower())
-                    if all(matchwindows) == False:
+                if (len(readseq) >= (base[0] + 5)):
+                    if (len(seq) < (((base[1])-start) + 5)):
+                        upperrange = len(seq)-(base[1]-start)
+                        lowerrange = 5 - upperrange                                            
+                        readindelwindow=readseq[(base[0] - lowerrange):(base[0] + upperrange)]
+                        seqindelwindow=seq[(((base[1])-start) - lowerrange):(((base[1])-start)+ upperrange)]                
+                        matchwindows=[]
+                        for i in range(len(readindelwindow)):
+                            try:
+                                matchwindows.append((readindelwindow[i].lower()==seqindelwindow[i].lower()))
+                            except IndexError:
+                                print i
+                                print readindelwindow
+                                print seqindelwindow
+                                print start
+                                print lowerrange
+                                print upperrange
+                                print base[0]
+                                print (base[0] - lowerrange)
+                                print (base[0] + upperrange)
+                                print base[1]
+                                print (base[1] - start)
+                                print ((((base[1])-start) - lowerrange)-1)
+                                print ((((base[1])-start) + upperrange)-1)
+                                print readseq
+                                print seq
+                                print gene_id
+                                print gene[0].contig                            
+                                raise
+                    elif (len(seq) >= (((base[1])-start) + 5)):
+                        readindelwindow=readseq[base[0]:(base[0] + 5)]
+                        seqindelwindow=seq[((base[1])-start):(((base[1])-start)+5)]
+                        matchwindows=[]
+                        for i in range(len(readindelwindow)):
+                            try: 
+                                matchwindows.append(readindelwindow[i].lower()==seqindelwindow[i].lower())
+                            except IndexError:
+                                print i
+                                print readindelwindow
+                                print seqindelwindow
+                                print start
+                                print base[0]
+                                print base[1]
+                                print (base[1] - start) - 1
+                                print ((base[1] - start) + 5) - 1
+                                print readseq
+                                print seq
+                                print gene_id
+                                print gene[0].contig
+                                raise
+                    if matchwindows.count(False) >= 4:
+                        return False
+                    else:
+                        return True
+                elif (len(readseq) < (base[0] + 5)):
+                    if len(seq) < (((base[1])-start) + 5):
+                        readsequpperrange = len(readseq)-base[0]
+                        readseqlowerrange = 5 - readsequpperrange
+                        sequpperrange = len(seq) - (base[1] - start)
+                        seqlowerrange = 5 - sequpperrange
+                        if readsequpperrange < sequpperrange:
+                            upperrange = readsequpperrange
+                            lowerrange = readseqlowerrange
+                        elif sequpperrange < readsequpperrange:
+                            upperrange = sequpperrange
+                            lowerrange = seqlowerrange
+                        elif sequpperrange == readsequpperrange:
+                            upperrange = sequpperrange
+                            lowerrange = seqlowerrange                        
+                    elif ((base[1] - start) - 4) < 0:
                         return True
                     else:
-                        return False
-                elif (len(readseq) < (base[0] + 5)) and (len(seq) < (((base[1])-start) + 5)):
-                    upperrange = len(readseq)-base[0]
-                    lowerrange = 5 - upperrange
+                        upperrange = len(readseq)-base[0]
+                        lowerrange = 5 - upperrange
                     readindelwindow=readseq[(base[0] - lowerrange):(base[0] + upperrange)]
-                    seqindelwindow=seq[((((base[1])-start) - lowerrange)-1):((((base[1])-start)+ upperrange)-1)]                
+                    seqindelwindow=seq[(((base[1])-start) - lowerrange):(((base[1])-start)+ upperrange)]                
                     matchwindows=[]
                     for i in range(len(readindelwindow)):
                         try:
@@ -316,18 +377,18 @@ def main(argv=None):
                             print (base[0] + upperrange)
                             print base[1]
                             print (base[1] - start)
-                            print (((base[1])-start) - lowerrange)
-                            print (((base[1])-start)+ upperrange)
+                            print ((((base[1])-start) - lowerrange))
+                            print ((((base[1])-start) + upperrange))
                             print readseq
                             print seq
                             print gene_id
                             print gene[0].contig
                             
                             raise
-                    if all(matchwindows) == False:
-                        return True
-                    else:
+                    if matchwindows.count(False) >= 4:
                         return False
+                    else:
+                        return True
 
             mismatches = [base for base in alignment
                           if base[2].islower() and
