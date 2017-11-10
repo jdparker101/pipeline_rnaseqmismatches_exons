@@ -38,6 +38,7 @@ from CGAT import Experiment as E
 from CGAT import GTF
 from CGAT import IOTools
 from CGAT.IndexedFasta import IndexedFasta
+import CGAT.Bed as Bed
 import textwrap
 import pysam
 import vcf
@@ -65,7 +66,9 @@ def main(argv=None):
     parser.add_option("-p", "--vcf-path", dest="vcfpath", type="string",
                        help="path to indexed vcf file for dataset  of choice")
     parser.add_option("-d", "--sample", dest="samppattern", type="string",
-                       help="pattern to match and extract the donor name from the bam file, for use in parsing the vcf file")       
+                       help="pattern to match and extract the donor name from the bam file, for use in parsing the vcf file")
+    parser.add_option("-n", "--REDI-path", dest="redipath", type="string",
+                       help="path to Bed format REDIportal table containing RNA editing positions")      
     #parser.add_option("-p", "--vcf-available", dest="vcfavail", type="int",
                        #help="whether a vcf file is available for this set of data")
     #parser.add_option("-a", "--vcf-avail", dest="vcfavail", type="int",
@@ -76,6 +79,7 @@ def main(argv=None):
     bamfile = pysam.AlignmentFile(options.bam)
     fastafile = IndexedFasta(options.fastapath)
     vcffile = vcf.Reader(open(options.vcfpath,"r"))
+    BEDREDI = Bed.readAndIndex(IOTools.openFile(options.redipath), with_values=True)
     options.stdout.write("\t".join(["gene_id",
                                     "mismatches",
                                     "bases",
@@ -84,7 +88,8 @@ def main(argv=None):
                                     "a_to_t","a_to_g","a_to_c",
                                     "t_to_a","t_to_g","t_to_c",
                                     "g_to_a","g_to_t","g_to_c",
-                                    "c_to_a","c_to_t","c_to_g"]) + "\n")
+                                    "c_to_a","c_to_t","c_to_g",
+                                    "indel_count","RNA_editing_events"]) + "\n")
     
     samplepattern = options.samppattern
     #samplepattern = samplepattern.replace('"','')
@@ -98,7 +103,6 @@ def main(argv=None):
         exontuple=GTF.asRanges(gene, "exon")
         start = min(e.start for e in gene)
         end = max(e.end for e in gene)  
-
         seq = fastafile.getSequence(gene[0].contig, "+", start, end)
         thischr = gene[0].contig.replace("chr","")
         reads = bamfile.fetch(gene[0].contig, start, end)
@@ -134,7 +138,8 @@ def main(argv=None):
         mm_count = 0
         base_count = 0
         skipped = 0
-        indelcount = 0
+        indel_count = 0
+        RNA_edits = 0
         matched_bases = defaultdict(int)
         transition = {"a_to_t":0,"a_to_g":0,"a_to_c":0,"t_to_a":0,"t_to_g":0,
         "t_to_c":0,"g_to_a":0,"g_to_t":0,"g_to_c":0,"c_to_a":0,"c_to_t":0,
@@ -160,7 +165,7 @@ def main(argv=None):
 
             alignmentcigar = read.cigarstring
 
-            indelcount += (alignmentcigar.count("I") + alignmentcigar.count("D"))
+            indel_count += (alignmentcigar.count("I") + alignmentcigar.count("D"))
 
             alignment = read.get_aligned_pairs(with_seq=True)
 
@@ -390,14 +395,32 @@ def main(argv=None):
                     else:
                         return True
 
+            def _is_RNA_edit(base):
+                BEDREDIregion = BEDREDI[contig].find(base[1],base[1]+1)
+                if len(list(BEDREDIregion)) == 0:
+                    return True
+                else:
+                    BEDREDIregion = BEDREDI[contig].find(base[1],base[1]+1)
+                    for editpos in BEDREDIregion:
+                        if base[1] in editpos:
+                            if base[2] == editpos[2].fields[0] and readseq[base[0]].lower() == (editpos[2].fields[1]).lower:
+                                RNA_edits += 1
+                                return False
+                            else:
+                                continue
+                        else:
+                            continue
+                return True
+
             mismatches = [base for base in alignment
                           if base[2].islower() and
                           start <= base[1] < end and
 		          qualities[base[0]] >= options.threshold and
                           base[2].lower() != "n" and 
                           _is_snp(base) and
-                          readseq[base[0]].lower() != "n"
-                          and _is_indel(base)]
+                          _is_indel(base) and
+                          _is_RNA_edit(base) and
+                          readseq[base[0]].lower() != "n"]
 
             
             total_mm = sum(1 for base in alignment
@@ -449,7 +472,8 @@ def main(argv=None):
                                      transition['c_to_a'],
                                      transition['c_to_t'],
                                      transition['c_to_g'],
-                                     indelcount]))
+                                     indel_count,
+                                     RNA_edits]))
         options.stdout.write(outline + "\n")
 
     # write footer and output benchmark information.
