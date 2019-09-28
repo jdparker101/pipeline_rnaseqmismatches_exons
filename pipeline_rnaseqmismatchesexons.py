@@ -200,7 +200,7 @@ def dedup_bams(infile, outfile):
                                 > %(outfile)s;
                   
                     checkpoint;
-                                rm -r %(tempfile)s
+                                rm -r %(tempfile)s;
 
                     checkpoint;
 
@@ -298,7 +298,7 @@ def count_mismatches(infile, outfile):
     vcfpath = PARAMS["vcf"]
     gtfpath = PARAMS["gtf"]
     redipath = PARAMS["redipath"]
-    sampat = PARAMS["samplepattern"]
+    sampat = "deduped.dir/" + PARAMS["samplepattern"]
     samplepattern = '"%s"'%(sampat)
     quality_threshold = PARAMS["quality_threshold"]
     statement = '''python %(projectsrc)s/count_mismatches_exons.py
@@ -330,7 +330,7 @@ def count_mismatches_with_VCF(infile, outfile):
     vcfpath = "Variantcalls.dir/" + vcfname
     redipath = PARAMS["redipath"]
     gtfpath = PARAMS["gtf"]
-    sampat = PARAMS["samplepattern"]
+    sampat = "deduped.dir/" + PARAMS["samplepattern"]
     samplepattern = '"%s"'%(sampat)
     quality_threshold = PARAMS["quality_threshold"]
     statement = '''python %(projectsrc)s/count_mismatches_exons.py
